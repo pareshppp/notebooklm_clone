@@ -1,6 +1,6 @@
 import streamlit as st
 from pathlib import Path
-from src.doc_parser import DocumentParser
+from src.sources.doc_parser import DocumentParser
 import mimetypes
 
 def is_supported_file(file_path: str) -> bool:

@@ -3,6 +3,10 @@ from datetime import datetime
 import os
 from pathlib import Path
 
+from src.tools.summary import generate_summary
+from src.tools.faqs import generate_faqs
+from src.tools.outline import generate_outline
+
 def render_tools_section():
     """Render the tools section with action buttons."""
     st.header("Tools")
@@ -10,7 +14,7 @@ def render_tools_section():
     
     with col1:
         if st.button("Summary"):
-            note = "Generated summary..."
+            note = generate_summary()
             st.session_state.notes.append({
                 "type": "summary",
                 "content": note,
@@ -19,7 +23,7 @@ def render_tools_section():
             st.rerun()
         
         if st.button("FAQs"):
-            note = "Generated FAQs..."
+            note = generate_faqs()
             st.session_state.notes.append({
                 "type": "faqs",
                 "content": note,
@@ -29,7 +33,7 @@ def render_tools_section():
     
     with col2:
         if st.button("Outline"):
-            note = "Generated outline..."
+            note = generate_outline()
             st.session_state.notes.append({
                 "type": "outline",
                 "content": note,

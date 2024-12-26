@@ -1,6 +1,6 @@
 import streamlit as st
 import logging
-from src.chat import chat_response
+from src.chat.chat import chat_response
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

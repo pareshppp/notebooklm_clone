@@ -34,7 +34,7 @@ try:
     llm = ChatVertexAI(
         model="gemini-1.5-flash-002",
         max_output_tokens=1024,
-        temperature=0.7,
+        temperature=0,
     )
 except Exception as e:
     logger.error(f"Error initializing LLM: {str(e)}")
