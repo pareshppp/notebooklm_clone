@@ -36,15 +36,14 @@ class VectorDBIngestion:
         # Initialize embeddings and vector store
         self.embeddings = VertexAIEmbeddings(model_name="text-embedding-005")
         
-
-        
         # Initialize Chroma collection
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.vectordb = Chroma(
             persist_directory=str(self.persist_dir),
-            collection_name=f"document_chunks_{timestamp}",
+            collection_name=f"document_chunks",
             embedding_function=self.embeddings
         )
+        self.retriever = self.vectordb.as_retriever(search_kwargs={"k": 5})
     
     def process_document(self, file_path: str, source_id: Optional[str] = None) -> List[str]:
         """
@@ -83,7 +82,7 @@ class VectorDBIngestion:
             logging.error(f"Error processing document {file_path}: {str(e)}")
             raise
     
-    def search(self, query: str, k: int = 5) -> List[Document]:
+    def invoke(self, query: str) -> List[Document]:
         """
         Search the vector database for relevant chunks.
         
@@ -94,7 +93,8 @@ class VectorDBIngestion:
         Returns:
             List[Document]: List of relevant document chunks
         """
-        return self.vectordb.similarity_search(query, k=k)
+        
+        return self.retriever.invoke(query)
     
     def get_stats(self) -> dict:
         """Get statistics about the vector database."""
