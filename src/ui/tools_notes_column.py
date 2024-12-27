@@ -6,11 +6,22 @@ from pathlib import Path
 from src.tools.summary import generate_summary
 from src.tools.faqs import generate_faqs
 from src.tools.outline import generate_outline
+from src.podcast.synthesize_speech import create_podcast_audio
 
 def render_tools_section():
     """Render the tools section with action buttons."""
     st.header("Tools")
-    col1, col2 = st.columns(2)
+    
+    # Initialize session state for podcast settings if not exists
+    if 'podcast_settings' not in st.session_state:
+        st.session_state.podcast_settings = {
+            'n_participants': 2,
+            'target_audience': 'college students',
+            'duration_mins': 15,
+            'last_podcast': None
+        }
+    
+    col1, col2, col3= st.columns(3)
     
     with col1:
         if st.button("Summary"):
@@ -21,7 +32,8 @@ def render_tools_section():
                 "timestamp": datetime.now()
             })
             st.rerun()
-        
+    
+    with col2:
         if st.button("FAQs"):
             note = generate_faqs()
             st.session_state.notes.append({
@@ -30,8 +42,8 @@ def render_tools_section():
                 "timestamp": datetime.now()
             })
             st.rerun()
-    
-    with col2:
+
+    with col3:
         if st.button("Outline"):
             note = generate_outline()
             st.session_state.notes.append({
@@ -40,15 +52,56 @@ def render_tools_section():
                 "timestamp": datetime.now()
             })
             st.rerun()
+
+    # Add Podcast button with settings expander
+    with st.expander("Podcast Settings"):
+        st.session_state.podcast_settings['n_participants'] = st.slider(
+            "Number of Participants (excluding host)",
+            min_value=1,
+            max_value=3,
+            value=st.session_state.podcast_settings['n_participants']
+        )
         
-        if st.button("Podcast"):
-            note = "Generated podcast script..."
-            st.session_state.notes.append({
-                "type": "podcast",
-                "content": note,
-                "timestamp": datetime.now()
-            })
-            st.rerun()
+        st.session_state.podcast_settings['target_audience'] = st.selectbox(
+            "Target Audience",
+            options=['lay person', 'college students', 'experts'],
+            index=['lay person', 'college students', 'experts'].index(
+                st.session_state.podcast_settings['target_audience']
+            )
+        )
+        
+        st.session_state.podcast_settings['duration_mins'] = st.slider(
+            "Duration (minutes)",
+            min_value=5,
+            max_value=30,
+            value=st.session_state.podcast_settings['duration_mins'],
+            step=5
+        )
+    
+    if st.button("Generate Podcast"):
+        with st.spinner("Generating podcast... This may take a few minutes."):
+            try:
+                # Generate the podcast
+                podcast_path = create_podcast_audio(
+                    n_participants=st.session_state.podcast_settings['n_participants'],
+                    target_audience=st.session_state.podcast_settings['target_audience'],
+                    duration_mins=st.session_state.podcast_settings['duration_mins']
+                )
+                
+                # Store the path in session state
+                st.session_state.podcast_settings['last_podcast'] = podcast_path
+                st.success("Podcast generated successfully!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error generating podcast: {str(e)}")
+    
+    # Display audio player if podcast exists
+    if st.session_state.podcast_settings['last_podcast']:
+        podcast_path = st.session_state.podcast_settings['last_podcast']
+        if os.path.exists(podcast_path):
+            st.subheader("Generated Podcast")
+            with open(podcast_path, 'rb') as audio_file:
+                st.audio(audio_file.read(), format='audio/mp3')
 
 def save_notes_to_markdown():
     """Save all notes to a markdown file and return the file path."""

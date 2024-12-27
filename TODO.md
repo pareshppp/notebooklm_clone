@@ -1,0 +1,8 @@
+- Add source upload and separate URL box
+- Add all notes to the chatbot context
+- Move Chatbox to bottom
+- Add spinners for Source upload, Summary, Outline, FAQs
+- Standardize the Buttons
+- Add a title to the app
+- Add User session state
+- Expose system prompt in podcast settings or add more options to the settings
