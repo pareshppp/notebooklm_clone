@@ -11,13 +11,6 @@ if 'notes' not in st.session_state:
 
 st.set_page_config(layout="wide", page_title="NotebookLM")
 
-# App title and description
-st.title("NotebookLM Clone")
-st.markdown("""
-A powerful tool for generating insights, summaries, and podcasts from your documents.
-Upload files, add URLs, and interact with your content through AI-powered tools.
-""")
-
 # Main app layout with three columns
 left_col, middle_col, right_col = st.columns([1, 2, 1])
 
