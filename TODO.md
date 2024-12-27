@@ -1,7 +1,5 @@
-- Add source upload and separate URL box
-- Add all notes to the chatbot context
 - Move Chatbox to bottom
-- Add spinners for Source upload, Summary, Outline, FAQs
+- Add spinners for Summary, Outline, FAQs
 - Standardize the Buttons
 - Add a title to the app
 - Add User session state

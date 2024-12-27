@@ -29,21 +29,16 @@ class AgentState(TypedDict):
     current_time: str
 
 # Initialize components
-try:
-    vertexai.init(project=os.getenv("GOOGLE_CLOUD_PROJECT"), location="us-central1")
-    llm = ChatVertexAI(
-        model="gemini-1.5-flash-002",
-        max_output_tokens=1024,
-        temperature=0,
-    )
-except Exception as e:
-    logger.error(f"Error initializing LLM: {str(e)}")
-    raise
+llm = ChatVertexAI(
+    model="gemini-1.5-flash-002",
+    max_output_tokens=1024,
+    temperature=0,
+)
 
 embeddings = VertexAIEmbeddings(model_name="text-embedding-005")
 
 vectordb = Chroma(
-    persist_directory=str(Path(".cache/.vectordb")),
+    persist_directory=str(Path(".cache/vectordb")),
     collection_name=f"document_chunks",
     embedding_function=embeddings
 )

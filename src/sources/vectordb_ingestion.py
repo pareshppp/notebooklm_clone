@@ -20,9 +20,9 @@ class VectorDBIngestion:
         
         Args:
             persist_dir: Directory to persist the vector database. 
-                       If None, uses .cache/.vectordb
+                       If None, uses .cache/vectordb
         """
-        self.persist_dir = Path(persist_dir) if persist_dir else Path(".cache/.vectordb")
+        self.persist_dir = Path(persist_dir) if persist_dir else Path(".cache/vectordb")
         self.persist_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize text splitter with default parameters

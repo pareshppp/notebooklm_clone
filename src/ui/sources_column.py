@@ -1,15 +1,47 @@
 import streamlit as st
 from pathlib import Path
-from src.sources.doc_parser import DocumentParser
 import mimetypes
+from typing import Optional
+
+from src.sources.doc_parser import DocumentParser
 
 def is_supported_file(file_path: str) -> bool:
     """Check if the file type is supported by the parser."""
     mime_type, _ = mimetypes.guess_type(file_path)
-    file_path = Path(file_path)
-    return (mime_type in ["text/plain", "application/pdf"] or 
-            mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" or
-            file_path.suffix in [".txt", ".md"])
+    if mime_type:
+        return mime_type.startswith('text/') or mime_type in [
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ]
+    return False
+
+def handle_file_upload(uploaded_file, upload_dir: Path = Path(".cache/uploaded_docs")) -> Optional[str]:
+    """Handle file upload and return the parsed file path if successful."""
+    if uploaded_file is None:
+        return None
+        
+    # Save uploaded file to temp location
+    upload_dir.mkdir(exist_ok=True)
+    file_upload_path = upload_dir / uploaded_file.name
+    
+    with open(file_upload_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    
+    if is_supported_file(str(file_upload_path)):
+        # Parse the file
+        parsed_path = st.session_state.doc_parser.parse_file(str(file_upload_path))
+        return parsed_path
+    else:
+        st.error(f"Unsupported file type: {uploaded_file.name}")
+        return None
+
+def handle_url_source(url: str) -> Optional[str]:
+    """Handle URL source addition and return the URL if valid."""
+    if not url:
+        return None
+        
+    # Here you could add URL validation if needed
+    return url
 
 def render_sources_column():
     """Render the sources column with source management functionality."""
@@ -19,38 +51,67 @@ def render_sources_column():
     if 'doc_parser' not in st.session_state:
         st.session_state.doc_parser = DocumentParser()
     
-    # Add source input and button
-    new_source = st.text_input("Enter source URL or path", key="new_source_input")
-    if st.button("Add Source") and new_source:
-        try:
-            source_path = Path(new_source)
-            if source_path.exists() and is_supported_file(new_source):
-                # Parse the file and get markdown path
-                parsed_path = st.session_state.doc_parser.parse_file(new_source)
-                if parsed_path not in st.session_state.sources:
-                    st.session_state.sources.append(parsed_path)
-                    st.success(f"File parsed and added: {source_path.name}")
-                    st.rerun()
-            else:
-                # Add as regular source if not a supported file
-                if new_source not in st.session_state.sources:
-                    st.session_state.sources.append(new_source)
-                    st.rerun()
-        except Exception as e:
-            st.error(f"Error adding source: {str(e)}")
+    # Initialize sources list if not exists
+    if 'sources' not in st.session_state:
+        st.session_state.sources = []
     
-    # Display sources
+    # Initialize file processing flag
+    if 'file_processed' not in st.session_state:
+        st.session_state.file_processed = False
+
+    # Source type selector
+    source_type = st.selectbox(
+        "Source Type",
+        options=["File Upload", "URL"],
+        key="source_type"
+    )
+    
+    if source_type == "File Upload":
+        # File uploader
+        uploaded_file = st.file_uploader(
+            "Upload Document",
+            type=["txt", "pdf", "docx", "md"],
+            help="Supported formats: TXT, PDF, DOCX, MD"
+        )
+        
+        if uploaded_file and not st.session_state.file_processed:
+            with st.spinner(f"Processing {uploaded_file.name}... This may take a moment."):
+                parsed_path = handle_file_upload(uploaded_file)
+                if parsed_path and parsed_path not in st.session_state.sources:
+                    st.session_state.sources.append(parsed_path)
+                    st.success(f"File processed and added: {uploaded_file.name}")
+                    st.session_state.file_processed = True
+                    st.rerun()
+        elif uploaded_file is None:
+            st.session_state.file_processed = False
+                
+    else:  # URL input
+        # URL input with its own submit button
+        url_input = st.text_input(
+            "Enter URL",
+            key="url_input",
+            placeholder="https://example.com/document"
+        )
+        
+        if st.button("Add URL Source"):
+            if url := handle_url_source(url_input):
+                if url not in st.session_state.sources:
+                    st.session_state.sources.append(url)
+                    st.success("URL source added successfully")
+                    st.rerun()
+                else:
+                    st.warning("This URL is already in your sources")
+    
+    # Display current sources
     if st.session_state.sources:
-        st.subheader("Added Sources:")
-        for idx, source in enumerate(st.session_state.sources):
-            col1, col2 = st.columns([4, 1])
+        st.subheader("Current Sources")
+        for i, source in enumerate(st.session_state.sources):
+            col1, col2 = st.columns([5, 1])
             with col1:
-                source_path = Path(source)
-                display_name = source_path.name if source_path.exists() else source
-                st.write(f"{idx + 1}. {display_name}")
+                st.text(str(source))
             with col2:
-                if st.button("🗑️", key=f"remove_{idx}"):
-                    st.session_state.sources.pop(idx)
+                if st.button("Remove", key=f"remove_{i}"):
+                    st.session_state.sources.pop(i)
                     st.rerun()
     else:
-        st.info("No sources added yet")
+        st.info("No sources added yet. Add some sources to get started!")

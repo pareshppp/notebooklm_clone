@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 # Initialize components
-vertexai.init(project=os.getenv("GOOGLE_CLOUD_PROJECT"), location="us-central1")
 llm = ChatVertexAI(
     model="gemini-1.5-flash-002",
     max_output_tokens=8096,

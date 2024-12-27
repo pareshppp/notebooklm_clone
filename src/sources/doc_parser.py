@@ -10,7 +10,7 @@ class DocumentParser:
     """Parser for various document formats (txt, md, pdf, docx)."""
     
     def __init__(self):
-        self.cache_dir = Path(".cache/.parsed_docs")
+        self.cache_dir = Path(".cache/parsed_docs")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.vectordb = VectorDBIngestion()
         

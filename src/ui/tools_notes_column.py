@@ -7,6 +7,7 @@ from src.tools.summary import generate_summary
 from src.tools.faqs import generate_faqs
 from src.tools.outline import generate_outline
 from src.podcast.synthesize_speech import create_podcast_audio
+from src.sources.vectordb_ingestion import VectorDBIngestion
 
 def render_tools_section():
     """Render the tools section with action buttons."""
@@ -25,33 +26,36 @@ def render_tools_section():
     
     with col1:
         if st.button("Summary"):
-            note = generate_summary()
-            st.session_state.notes.append({
-                "type": "summary",
-                "content": note,
-                "timestamp": datetime.now()
-            })
-            st.rerun()
+            with st.spinner("Generating summary..."):
+                note = generate_summary()
+                st.session_state.notes.append({
+                    "type": "summary",
+                    "content": note,
+                    "timestamp": datetime.now()
+                })
+                st.rerun()
     
     with col2:
         if st.button("FAQs"):
-            note = generate_faqs()
-            st.session_state.notes.append({
-                "type": "faqs",
-                "content": note,
-                "timestamp": datetime.now()
-            })
-            st.rerun()
+            with st.spinner("Generating FAQs..."):
+                note = generate_faqs()
+                st.session_state.notes.append({
+                    "type": "faqs",
+                    "content": note,
+                    "timestamp": datetime.now()
+                })
+                st.rerun()
 
     with col3:
         if st.button("Outline"):
-            note = generate_outline()
-            st.session_state.notes.append({
-                "type": "outline",
-                "content": note,
-                "timestamp": datetime.now()
-            })
-            st.rerun()
+            with st.spinner("Generating outline..."):
+                note = generate_outline()
+                st.session_state.notes.append({
+                    "type": "outline",
+                    "content": note,
+                    "timestamp": datetime.now()
+                })
+                st.rerun()
 
     # Add Podcast button with settings expander
     with st.expander("Podcast Settings"):
@@ -109,7 +113,7 @@ def save_notes_to_markdown():
         return None
         
     # Create notes directory if it doesn't exist
-    notes_dir = Path(".cache/.notes")
+    notes_dir = Path(".cache/notes")
     notes_dir.mkdir(exist_ok=True)
     
     # Generate filename with timestamp
@@ -151,12 +155,18 @@ def render_notes_section():
     with col2:
         if st.button("Add Notes to Source"):
             if st.session_state.notes:
-                # Save notes to markdown file
-                notes_file = save_notes_to_markdown()
-                if notes_file and notes_file not in st.session_state.sources:
-                    st.session_state.sources.append(notes_file)
-                    st.success(f"Notes saved to {notes_file} and added to sources")
-                    st.rerun()
+                with st.spinner("Saving notes and indexing into vector database..."):
+                    # Save notes to markdown file
+                    notes_file = save_notes_to_markdown()
+                    if notes_file and notes_file not in st.session_state.sources:
+                        # Index the notes in vector database
+                        vectordb = VectorDBIngestion()
+                        vectordb.process_document(notes_file, source_id=Path(notes_file).name)
+                        
+                        # Add to sources
+                        st.session_state.sources.append(notes_file)
+                        st.success(f"Notes saved and indexed successfully")
+                        st.rerun()
             else:
                 st.warning("No notes available to add as source")
     
